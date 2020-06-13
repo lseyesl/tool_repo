@@ -1,0 +1,505 @@
+<div data-v-50ff96fb="" data-id="59b62adb6fb9a00a42474092" itemprop="articleBody" class="article-content js-evernote-checked" data-evernote-id="454"><div></div><div></div><div></div><h2 data-id="heading-0" data-evernote-id="749" class="js-evernote-checked">前言</h2><div><div>React高阶组件，即 Higher-Order Component，其<a href="https://facebook.github.io/react/docs/higher-order-components.html" target="_blank" rel="nofollow noopener noreferrer" data-evernote-id="17" class="js-evernote-checked">官方解释</a>是：</div></div><blockquote data-evernote-id="471" class="js-evernote-checked"><div>A higher-order component is a function that takes a component and returns a new component.</div></blockquote><div><div>一个传入一个组件，返回另一个组件的函数，其概念与高阶函数的将函数作为参数传入类似。</div></div><div><div>用代码来解释就是：</div></div><pre class="hljs bash js-evernote-checked" data-evernote-id="400"><code class="copyable js-evernote-checked" data-evernote-id="401">const EnhancedComponent = higherOrderComponent(WrappedComponent);<span class="copy-code-btn js-evernote-checked" data-evernote-id="722">复制代码</span></code></pre><div><div>以上通过 higherOrderComponent 函数返回的 EnhancedComponent 就是一个高阶组件。所以简单来说，高阶只是一种设计模式（pattern），并非一种新的组件类型。</div></div><h2 data-id="heading-1" data-evernote-id="750" class="js-evernote-checked">
+</h2><h2 data-id="heading-2" data-evernote-id="751" class="js-evernote-checked">为何使用</h2><div><div>关于高阶组件解决的问题可以简单概括成以下几个方面：</div></div><ul data-evernote-id="474" class="js-evernote-checked"><li data-evernote-id="483" class="js-evernote-checked"><div>代码复用：这是高阶组件最基本的功能。组件是React中最小单元，两个相似度很高的组件通过将组件重复部分抽取出来，再通过高阶组件扩展，增删改props，可达到组件可复用的目的；</div></li><li data-evernote-id="484" class="js-evernote-checked"><div>条件渲染：控制组件的渲染逻辑，常见case：鉴权；</div></li><li data-evernote-id="485" class="js-evernote-checked"><div>生命周期捕获/劫持：借助父组件子组件生命周期规则捕获子组件的生命周期，常见case：打点。</div></li></ul><div><div><br></div></div><h2 data-id="heading-3" data-evernote-id="752" class="js-evernote-checked">如何使用</h2><div><div><b data-evernote-id="354" class="js-evernote-checked">遵循的原则</b></div></div><div><div><br></div><p data-evernote-id="455" class="js-evernote-checked">1、不要修改原始组件</p></div><div><div>常见做法是通过修改原组件的prototype来重写其生命周期方法等（如给WrappedComponent.prototype.componentWillReceiveProps重新赋值）。请使用纯函数返回新的组件，因为一旦修改原组件，就失去了组件复用的意义。</div></div><div><div><div></div><div><div><br></div><div>2、props保持一致</div><div></div></div><div><div></div>高阶组件在为子组件添加特性的同时，要保持子组件的原有的props不受影响。传入的组件和返回的组件在props上尽量保持一致。</div></div></div><div><div><br></div><p data-evernote-id="456" class="js-evernote-checked">3、保持可组合性</p></div><div><div><div></div><div><div>4、displayName</div><div></div><div></div></div><div></div><div><div></div>为了方便调试，最常见的高阶组件命名方式是将子组件名字包裹起来。</div></div></div><div><div><br></div><div></div><div><div>5、不要在render方法内部使用高阶组件</div><div></div><div></div><div></div></div><div></div><div></div><div><div></div>render中的高阶组件会在每次render时重新mount，之前组件内部的state也会丢失。</div></div><div></div><div><div><br></div></div><div></div><div><div><br></div></div><div><div><b data-evernote-id="355" class="js-evernote-checked">使用方法对比</b></div></div><div><div>高阶组件使用有几种不同的方式，在介绍这几种方式之前，我们可以几个方面来分析他们之间的差异。一个React组件有以下几个重要组成部分：</div></div><ul data-evernote-id="475" class="js-evernote-checked"><li data-evernote-id="486" class="js-evernote-checked"><div>props</div></li><li data-evernote-id="487" class="js-evernote-checked"><div>state</div></li><li data-evernote-id="488" class="js-evernote-checked"><div>ref</div></li><li data-evernote-id="489" class="js-evernote-checked"><div>生命周期方法</div></li><li data-evernote-id="490" class="js-evernote-checked"><div>static方法</div></li><li data-evernote-id="491" class="js-evernote-checked"><div>React 元素树</div></li></ul><div><div>补充一下：为了访问DOM elements（focus事件、动画、使用第三方dom操作库）时我们会用到ref属性。它可以声明在DOM Element和Class Component上，无法声明在Functional Components上。一开始ref声明为字符串的方式基本不推荐使用，在未来的react版本中可能不会再支持，目前官方推荐的用法是ref属性接收一个回调函数。这个函数执行的时机为：</div></div><ol data-evernote-id="476" class="js-evernote-checked"><li data-evernote-id="492" class="js-evernote-checked"><div>组件被挂载后，回调函数被立即执行，回调函数的参数为该组件的具体实例。</div></li><li data-evernote-id="493" class="js-evernote-checked"><div>组件被卸载或者原有的ref属性本身发生变化时，回调也会被立即执行，此时回调函数参数为null，以确保内存泄露。</div></li></ol><div><div><br></div></div><div><div>所以不同方式的对比可以从以下几个方面进行（原组件即传入组件）：</div></div><ol data-evernote-id="477" class="js-evernote-checked"><li data-evernote-id="494" class="js-evernote-checked"><div>原组件所在位置：如能否被包裹或包裹其他组件；</div></li><li data-evernote-id="495" class="js-evernote-checked"><div>能否读取到或操作原组件的props</div></li><li data-evernote-id="496" class="js-evernote-checked"><div>能否读取、操作（编辑、删除）原组件的state</div></li><li data-evernote-id="497" class="js-evernote-checked"><div>能否通过ref访问到原组件中的dom元素</div></li><li data-evernote-id="498" class="js-evernote-checked"><div>是否影响原组件某些生命周期等方法</div></li><li data-evernote-id="499" class="js-evernote-checked"><div>是否取到原组件static方法</div></li><li data-evernote-id="500" class="js-evernote-checked"><div>能否劫持原组件生命周期方法</div></li><li data-evernote-id="501" class="js-evernote-checked"><div>能否渲染劫持</div></li></ol><div><div><br></div></div><div><div>使用方法介绍</div></div><div><div>下面我们来介绍下高阶组件的使用方法，在介绍之前，我们假设有一个简单的组件Student，有name和age两个通过props传入后初始化的state，一个年龄输入框，一个点击后focus输入框的按钮和一个sayHello的static方法。</div></div><div><div><br></div></div><div><img class="lazyload inited loaded js-evernote-checked" data-src="https://user-gold-cdn.xitu.io/2017/9/9/b6c3f8f2e4c7aecd33606c8a9e6dc4f9?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" data-width="800" data-height="600" src="https://user-gold-cdn.xitu.io/2017/9/9/b6c3f8f2e4c7aecd33606c8a9e6dc4f9?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" data-evernote-lazy-src="https://user-gold-cdn.xitu.io/2017/9/9/b6c3f8f2e4c7aecd33606c8a9e6dc4f9?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" data-evernote-id="159" width="600" height="289"></div><div><div><br></div></div><pre class="hljs bash js-evernote-checked" data-evernote-id="402"><code class="copyable js-evernote-checked" data-evernote-id="403">class Student extends React.Component {
+    static <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="627">sayHello</span></span>() {
+        console.log(<span class="hljs-string js-evernote-checked" data-evernote-id="560">'hello from Student'</span>); // eslint-disable-line
+    }
+    constructor(props) {
+        super(props);
+        console.log(<span class="hljs-string js-evernote-checked" data-evernote-id="561">'Student constructor'</span>); // eslint-disable-line
+        this.focus = this.focus.bind(this);
+    }
+    <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="628">componentWillMount</span></span>() {
+        console.log(<span class="hljs-string js-evernote-checked" data-evernote-id="562">'Student componentWillMount'</span>); // eslint-disable-line
+        this.setState({
+            name: this.props.name,
+            age: this.props.age,
+        });
+    }
+    <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="629">componentDidMount</span></span>() {
+        console.log(<span class="hljs-string js-evernote-checked" data-evernote-id="563">'Student componentDidMount'</span>); // eslint-disable-line
+    }
+    componentWillReceiveProps(nextProps) {
+        console.log(<span class="hljs-string js-evernote-checked" data-evernote-id="564">'Student componentWillReceiveProps'</span>); // eslint-disable-line
+        console.log(nextProps); // eslint-disable-line
+    }
+    <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="630">focus</span></span>() {
+        this.inputElement.focus();
+    }
+    <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="631">render</span></span>() {
+        <span class="hljs-built_in js-evernote-checked" data-evernote-id="665">return</span> (&lt;div style={outerStyle}&gt;
+            &lt;p&gt;姓名：{this.state.name}&lt;/p&gt;
+            &lt;p&gt;
+                年龄:
+                &lt;input
+                    style={inputStyle}
+                    value={this.state.age}
+                    ref={(input) =&gt; {
+                        this.inputElement = input;
+                    }}
+                /&gt;
+            &lt;/p&gt;
+            &lt;p&gt;
+                &lt;input
+                    style={buttonStyle}
+                    <span class="hljs-built_in js-evernote-checked" data-evernote-id="666">type</span>=<span class="hljs-string js-evernote-checked" data-evernote-id="565">"button"</span>
+                    value=<span class="hljs-string js-evernote-checked" data-evernote-id="566">"focus input"</span>
+                    onClick={this.focus}
+                /&gt;
+            &lt;/p&gt;
+        &lt;/div&gt;);
+    }
+}<span class="copy-code-btn js-evernote-checked" data-evernote-id="723">复制代码</span></code></pre><div><div><br></div></div><div><div>总的来说，高阶组件中返回新组件的方式有以下3种：</div></div><div><div><b data-evernote-id="356" class="js-evernote-checked"><br></b></div><p data-evernote-id="457" class="js-evernote-checked"><b data-evernote-id="357" class="js-evernote-checked">1、直接返回一个stateless component</b>，如：</p></div><pre class="hljs bash js-evernote-checked" data-evernote-id="404"><code class="copyable js-evernote-checked" data-evernote-id="405"><span class="hljs-keyword js-evernote-checked" data-evernote-id="532">function</span> EnhanceWrapper(WrappedComponent) {
+   const newProps = {
+        <span class="hljs-built_in js-evernote-checked" data-evernote-id="667">source</span>: <span class="hljs-string js-evernote-checked" data-evernote-id="567">'app'</span>,
+    };
+    <span class="hljs-built_in js-evernote-checked" data-evernote-id="668">return</span> props =&gt; &lt;WrappedComponent {...props} {...newProps} /&gt;;
+}<span class="copy-code-btn js-evernote-checked" data-evernote-id="724">复制代码</span></code></pre><div><div>stateless component没有自己的内部state及生命周期，所以这种方式常用于对组件的props进行简单统一的逻辑处理。</div></div><ol data-evernote-id="478" class="js-evernote-checked"><li data-evernote-id="502" class="js-evernote-checked"><div>√   原组件所在位置（能否被包裹或包裹其他组件）</div></li><li data-evernote-id="503" class="js-evernote-checked"><div>√   能否取到或操作原组件的props</div></li><li data-evernote-id="504" class="js-evernote-checked"><div>乄 能否取到或操作state</div></li><li data-evernote-id="505" class="js-evernote-checked"><div>乄 能否通过ref访问到原组件中的dom元素</div></li><li data-evernote-id="506" class="js-evernote-checked"><div>X &nbsp;是否影响原组件生命周期等方法</div></li><li data-evernote-id="507" class="js-evernote-checked"><div>√   是否取到原组件static方法</div></li><li data-evernote-id="508" class="js-evernote-checked"><div>X &nbsp;能否劫持原组件生命周期</div></li><li data-evernote-id="509" class="js-evernote-checked"><div>乄  能否渲染劫持</div></li></ol><div><div><b data-evernote-id="358" class="js-evernote-checked">一些说明：</b></div></div><div><div><b data-evernote-id="359" class="js-evernote-checked">3：</b>可以通过props 和回调函数对state进行操作。</div></div><div><div><b data-evernote-id="360" class="js-evernote-checked">4：</b>因为 stateless component 并无实例，所以不要说 ref ，this都无法访问。但是可以通过子组件的ref回调函数来访问子组件的ref。</div></div><div><div></div><div><b data-evernote-id="361" class="js-evernote-checked">8：</b>可以通过props来控制是否渲染及传入数据，但对 WrappedComponent 内部render的控制并不是很强。</div><p data-evernote-id="458" class="js-evernote-checked">关于ref的访问，以上面的子组件Student为例，父组件：</p></div><pre class="hljs bash js-evernote-checked" data-evernote-id="406"><code class="copyable js-evernote-checked" data-evernote-id="407">import Student from <span class="hljs-string js-evernote-checked" data-evernote-id="568">'../components/common/Student'</span>;
+
+<span class="hljs-keyword js-evernote-checked" data-evernote-id="533">function</span> EnhanceWrapper(WrappedComponent) {
+    <span class="hljs-built_in js-evernote-checked" data-evernote-id="669">let</span> inputElement = null;
+    <span class="hljs-keyword js-evernote-checked" data-evernote-id="534">function</span> <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="632">handleClick</span></span>() {
+        inputElement.focus();
+    }
+    <span class="hljs-keyword js-evernote-checked" data-evernote-id="535">function</span> <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="633">wrappedComponentStaic</span></span>() {
+        WrappedComponent.sayHello();
+    }
+    <span class="hljs-built_in js-evernote-checked" data-evernote-id="670">return</span> props =&gt; (&lt;div&gt;
+        &lt;WrappedComponent
+            inputRef={(el) =&gt; { inputElement = el; }}
+            {...props}
+        /&gt;
+        &lt;input
+            <span class="hljs-built_in js-evernote-checked" data-evernote-id="671">type</span>=<span class="hljs-string js-evernote-checked" data-evernote-id="569">"button"</span>
+            value=<span class="hljs-string js-evernote-checked" data-evernote-id="570">"focus子组件input"</span>
+            onClick={handleClick}
+        /&gt;
+        &lt;input
+            <span class="hljs-built_in js-evernote-checked" data-evernote-id="672">type</span>=<span class="hljs-string js-evernote-checked" data-evernote-id="571">"button"</span>
+            value=<span class="hljs-string js-evernote-checked" data-evernote-id="572">"调用子组件static"</span>
+            onClick={wrappedComponentStaic}
+        /&gt;
+    &lt;/div&gt;);
+}
+
+const WrapperComponent = EnhanceWrapper(ShopList);<span class="copy-code-btn js-evernote-checked" data-evernote-id="725">复制代码</span></code></pre><div><div><br></div></div><div><div>子组件中需要调用父组件传入的ref回调函数：</div></div><pre class="hljs bash js-evernote-checked" data-evernote-id="408"><code class="copyable js-evernote-checked" data-evernote-id="409">&lt;input 
+   ref={(input) =&gt; { 
+       this.inputElement = input; 
+    }}
+/&gt;<span class="copy-code-btn js-evernote-checked" data-evernote-id="726">复制代码</span></code></pre><div><div>改为：</div></div><pre class="hljs bash js-evernote-checked" data-evernote-id="410"><code class="copyable js-evernote-checked" data-evernote-id="411">&lt;input 
+    ref={(input) =&gt; { 
+        this.inputElement = input; 
+        this.props.inputRef(input); 
+    }}
+/&gt;<span class="copy-code-btn js-evernote-checked" data-evernote-id="727">复制代码</span></code></pre><div><div>这样父组件可以访问到子组件中的input元素。</div></div><div><div>以下是ref调用和static方法调用的示例。  </div></div><div><div><br></div></div><div><img class="lazyload inited loaded js-evernote-checked" data-src="https://user-gold-cdn.xitu.io/2017/9/9/57b06c023d164fc7cc90411e0f8ce3b6?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" data-width="800" data-height="600" src="https://user-gold-cdn.xitu.io/2017/9/9/57b06c023d164fc7cc90411e0f8ce3b6?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" data-evernote-lazy-src="https://user-gold-cdn.xitu.io/2017/9/9/57b06c023d164fc7cc90411e0f8ce3b6?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" data-evernote-id="160" width="320" height="381"></div><div><div><br></div></div><div><div><b data-evernote-id="362" class="js-evernote-checked">2、在新组件的render函数中返回一个新的class component</b>，如：</div></div><pre class="hljs bash js-evernote-checked" data-evernote-id="412"><code class="copyable js-evernote-checked" data-evernote-id="413"><span class="hljs-keyword js-evernote-checked" data-evernote-id="536">function</span> EnhanceWrapper(WrappedComponent) {
+    <span class="hljs-built_in js-evernote-checked" data-evernote-id="673">return</span> class WrappedComponent extends React.Component {
+        <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="634">render</span></span>() {
+           <span class="hljs-built_in js-evernote-checked" data-evernote-id="674">return</span> &lt;WrappedComponent {...this.props} /&gt;;
+        }
+    }
+}<span class="copy-code-btn js-evernote-checked" data-evernote-id="728">复制代码</span></code></pre><ol data-evernote-id="479" class="js-evernote-checked"><li data-evernote-id="510" class="js-evernote-checked"><div>√   原组件所在位置（能否被包裹或包裹其他组件）</div></li><li data-evernote-id="511" class="js-evernote-checked"><div>√   能否取到或操作原组件的props</div></li><li data-evernote-id="512" class="js-evernote-checked"><div>乄  能否取到或操作state</div></li><li data-evernote-id="513" class="js-evernote-checked"><div>乄  能否通过ref访问到原组件中的dom元素</div></li><li data-evernote-id="514" class="js-evernote-checked"><div>√   是否影响原组件生命周期等方法</div></li><li data-evernote-id="515" class="js-evernote-checked"><div>√   是否取到原组件static方法</div></li><li data-evernote-id="516" class="js-evernote-checked"><div>X &nbsp;能否劫持原组件生命周期</div></li><li data-evernote-id="517" class="js-evernote-checked"><div>乄 能否渲染劫持</div></li></ol><div><div><b data-evernote-id="363" class="js-evernote-checked"><div></div>一些说明：<br></b></div><div><b data-evernote-id="364" class="js-evernote-checked">3：</b>可以通过props 和回调函数对state进行操作。</div></div><div><div><b data-evernote-id="365" class="js-evernote-checked">4：</b>ref虽然无法直接通过this来直接访问，但依旧可以利用上面所用的回调函数方式访问。</div></div><div><div><b data-evernote-id="366" class="js-evernote-checked">7：</b>高阶组件和原组件的生命周期完全是React父子组件的生命周期关系。</div><div><b data-evernote-id="367" class="js-evernote-checked">8：</b>和第一种类似，可以通过props来控制是否渲染及传入数据，但对WrappedComponent内部render的控制并不是很强。</div></div><pre class="hljs bash js-evernote-checked" data-evernote-id="414"><code class="copyable js-evernote-checked" data-evernote-id="415"><span class="hljs-keyword js-evernote-checked" data-evernote-id="537">function</span> EnhanceWrapper(WrappedComponent) {
+    <span class="hljs-built_in js-evernote-checked" data-evernote-id="675">return</span> class WrapperComponent extends React.Component {
+        static <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="635">wrappedComponentStaic</span></span>() {
+            WrappedComponent.sayHello();
+        }
+        constructor(props) {
+            super(props);
+            console.log(<span class="hljs-string js-evernote-checked" data-evernote-id="573">'WrapperComponent constructor'</span>); // eslint-disable-line
+            this.handleClick = this.handleClick.bind(this);
+        }
+        <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="636">componentWillMount</span></span>() {
+            console.log(<span class="hljs-string js-evernote-checked" data-evernote-id="574">'WrapperComponent componentWillMount'</span>); // eslint-disable-line
+        }
+        <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="637">componentDidMount</span></span>() {
+            console.log(<span class="hljs-string js-evernote-checked" data-evernote-id="575">'WrapperComponent componentDidMount'</span>); // eslint-disable-line
+        }
+        <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="638">handleClick</span></span>() {
+            this.inputElement.focus();
+        }
+        <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="639">render</span></span>() {
+            <span class="hljs-built_in js-evernote-checked" data-evernote-id="676">return</span> (&lt;div&gt;
+                &lt;WrappedComponent
+                    inputRef={(el) =&gt; { this.inputElement = el; }}
+                    {...this.props}
+                /&gt;
+                &lt;input
+                    <span class="hljs-built_in js-evernote-checked" data-evernote-id="677">type</span>=<span class="hljs-string js-evernote-checked" data-evernote-id="576">"button"</span>
+                    value=<span class="hljs-string js-evernote-checked" data-evernote-id="577">"focus子组件input"</span>
+                    onClick={this.handleClick}
+                /&gt;
+                &lt;input
+                    <span class="hljs-built_in js-evernote-checked" data-evernote-id="678">type</span>=<span class="hljs-string js-evernote-checked" data-evernote-id="578">"button"</span>
+                    value=<span class="hljs-string js-evernote-checked" data-evernote-id="579">"调用子组件static"</span>
+                    onClick={this.constructor.wrappedComponentStaic}
+                /&gt;
+            &lt;/div&gt;);
+        }
+    };
+}<span class="copy-code-btn js-evernote-checked" data-evernote-id="729">复制代码</span></code></pre><div><div><br></div></div><div><img class="lazyload inited js-evernote-checked" data-src="https://user-gold-cdn.xitu.io/2017/9/9/7247e72c67b4d959c20de120d43f3303?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" data-width="800" data-height="600" src="https://user-gold-cdn.xitu.io/2017/9/9/7247e72c67b4d959c20de120d43f3303?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" data-evernote-lazy-src="https://user-gold-cdn.xitu.io/2017/9/9/7247e72c67b4d959c20de120d43f3303?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" data-evernote-id="161" width="320" height="438"></div><div><div><br></div></div><div><div><br></div></div><div><p data-evernote-id="459" class="js-evernote-checked"><b data-evernote-id="368" class="js-evernote-checked">3、继承（extends）原组件后返回一个新的class component</b>，如：</p></div><pre class="hljs bash js-evernote-checked" data-evernote-id="416"><code class="copyable js-evernote-checked" data-evernote-id="417"><span class="hljs-keyword js-evernote-checked" data-evernote-id="538">function</span> EnhanceWrapper(WrappedComponent) {
+    <span class="hljs-built_in js-evernote-checked" data-evernote-id="679">return</span> class WrappedComponent extends WrappedComponent {
+        <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="640">render</span></span>() {
+            <span class="hljs-built_in js-evernote-checked" data-evernote-id="680">return</span> super.render();
+        }
+    }
+}<span class="copy-code-btn js-evernote-checked" data-evernote-id="730">复制代码</span></code></pre><div><div>此种方式最大特点是下允许 HOC 通过 this 访问到 WrappedComponent，所以可以读取和操作state/ref/生命周期方法。</div></div><ol data-evernote-id="480" class="js-evernote-checked"><li data-evernote-id="518" class="js-evernote-checked"><div>√   原组件所在位置（能否被包裹或包裹其他组件）</div></li><li data-evernote-id="519" class="js-evernote-checked"><div>√   能否取到或操作原组件的props</div></li><li data-evernote-id="520" class="js-evernote-checked"><div>√   能否取到或操作state</div></li><li data-evernote-id="521" class="js-evernote-checked"><div>√   能否通过ref访问到原组件中的dom元素</div></li><li data-evernote-id="522" class="js-evernote-checked"><div>√   是否影响原组件生命周期等方法</div></li><li data-evernote-id="523" class="js-evernote-checked"><div>√   是否取到原组件static方法</div></li><li data-evernote-id="524" class="js-evernote-checked"><div>√   能否劫持原组件生命周期</div></li><li data-evernote-id="525" class="js-evernote-checked"><div>√   能否渲染劫持</div></li></ol><pre class="hljs bash js-evernote-checked" data-evernote-id="418"><code class="copyable js-evernote-checked" data-evernote-id="419"><span class="hljs-keyword js-evernote-checked" data-evernote-id="539">function</span> EnhanceWrapper(WrappedComponent) {
+    <span class="hljs-built_in js-evernote-checked" data-evernote-id="681">return</span> class WrapperComponent extends WrappedComponent {
+        constructor(props) {
+            super(props);
+            console.log(<span class="hljs-string js-evernote-checked" data-evernote-id="580">'WrapperComponent constructor'</span>); // eslint-disable-line
+            this.handleClick = this.handleClick.bind(this);
+        }
+        componentDidMount(...argus) {
+            console.log(<span class="hljs-string js-evernote-checked" data-evernote-id="581">'WrapperComponent componentDidMount'</span>); // eslint-disable-line
+            <span class="hljs-keyword js-evernote-checked" data-evernote-id="540">if</span> (didMount) {
+                didMount.apply(this, argus);
+            }
+        }
+        <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="641">handleClick</span></span>() {
+            this.inputElement.focus();
+        }
+        <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="642">render</span></span>() {
+            <span class="hljs-built_in js-evernote-checked" data-evernote-id="682">return</span> (&lt;div&gt;
+                {super.render()}
+                &lt;p&gt;姓名：{this.state.name}&lt;/p&gt;
+                &lt;input
+                    <span class="hljs-built_in js-evernote-checked" data-evernote-id="683">type</span>=<span class="hljs-string js-evernote-checked" data-evernote-id="582">"button"</span>
+                    value=<span class="hljs-string js-evernote-checked" data-evernote-id="583">"focus子组件input"</span>
+                    onClick={this.handleClick}
+                /&gt;
+                &lt;input
+                    <span class="hljs-built_in js-evernote-checked" data-evernote-id="684">type</span>=<span class="hljs-string js-evernote-checked" data-evernote-id="584">"button"</span>
+                    value=<span class="hljs-string js-evernote-checked" data-evernote-id="585">"调用子组件static"</span>
+                    onClick={WrapperComponent.sayHello}
+                /&gt;
+            &lt;/div&gt;);
+        }
+    };
+}<span class="copy-code-btn js-evernote-checked" data-evernote-id="731">复制代码</span></code></pre><div><div><b data-evernote-id="369" class="js-evernote-checked"><br></b></div><div></div><p data-evernote-id="460" class="js-evernote-checked"><b data-evernote-id="370" class="js-evernote-checked">一些说明：</b></p><p data-evernote-id="461" class="js-evernote-checked"><b data-evernote-id="371" class="js-evernote-checked">5：</b>由于class继承时会先生成父类的示例，所以 Student 的 constructor 会先于WrapperComponent 执行。其次，继承会覆盖父类的实例方法，所以在 WrapperComponent定义 componentDidMount 后Student的 componentDidMount 会被覆盖不会执行。没有被覆盖的componentWillMount会被执行。</p></div><div><div><br></div></div><div><img class="lazyload inited loaded js-evernote-checked" data-src="https://user-gold-cdn.xitu.io/2017/9/9/c826dd8eb79b24220c4ad7953cf89a06?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" data-width="800" data-height="600" src="https://user-gold-cdn.xitu.io/2017/9/9/c826dd8eb79b24220c4ad7953cf89a06?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" data-evernote-lazy-src="https://user-gold-cdn.xitu.io/2017/9/9/c826dd8eb79b24220c4ad7953cf89a06?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" data-evernote-id="162" width="532" height="224"></div><div><div><br></div></div><div><div><b data-evernote-id="372" class="js-evernote-checked">7：</b>虽然生命周期重写会被覆盖，但可以通过其他方式来劫持生命周期。</div></div><pre class="hljs bash js-evernote-checked" data-evernote-id="420"><code class="copyable js-evernote-checked" data-evernote-id="421"><span class="hljs-keyword js-evernote-checked" data-evernote-id="541">function</span> EnhanceWrapper(WrappedComponent) {
+    const willMount = WrappedComponent.prototype.componentWillMount;
+    const didMount = WrappedComponent.prototype.componentDidMount;
+    <span class="hljs-built_in js-evernote-checked" data-evernote-id="685">return</span> class WrapperComponent extends WrappedComponent {
+        constructor(props) {
+            super(props);
+            console.log(<span class="hljs-string js-evernote-checked" data-evernote-id="586">'WrapperComponent constructor'</span>); // eslint-disable-line
+            this.handleClick = this.handleClick.bind(this);
+        }
+        componentWillMount(...argus) {
+            console.log(<span class="hljs-string js-evernote-checked" data-evernote-id="587">'WrapperComponent componentWillMount'</span>); // eslint-disable-line
+            <span class="hljs-keyword js-evernote-checked" data-evernote-id="542">if</span> (willMount) {
+                willMount.apply(this, argus);
+            }
+        }
+        componentDidMount(...argus) {
+            console.log(<span class="hljs-string js-evernote-checked" data-evernote-id="588">'WrapperComponent componentDidMount'</span>); // eslint-disable-line
+            <span class="hljs-keyword js-evernote-checked" data-evernote-id="543">if</span> (didMount) {
+                didMount.apply(this, argus);
+            }
+        }
+        <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="643">handleClick</span></span>() {
+            this.inputElement.focus();
+        }
+        <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="644">render</span></span>() {
+            <span class="hljs-built_in js-evernote-checked" data-evernote-id="686">return</span> (&lt;div&gt;
+                {super.render()}
+                &lt;p&gt;姓名：{this.state.name}&lt;/p&gt;
+                &lt;input
+                    <span class="hljs-built_in js-evernote-checked" data-evernote-id="687">type</span>=<span class="hljs-string js-evernote-checked" data-evernote-id="589">"button"</span>
+                    value=<span class="hljs-string js-evernote-checked" data-evernote-id="590">"focus子组件input"</span>
+                    onClick={this.handleClick}
+                /&gt;
+                &lt;input
+                    <span class="hljs-built_in js-evernote-checked" data-evernote-id="688">type</span>=<span class="hljs-string js-evernote-checked" data-evernote-id="591">"button"</span>
+                    value=<span class="hljs-string js-evernote-checked" data-evernote-id="592">"调用子组件static"</span>
+                    onClick={WrapperComponent.sayHello}
+                /&gt;
+            &lt;/div&gt;);
+        }
+    };
+}<span class="copy-code-btn js-evernote-checked" data-evernote-id="732">复制代码</span></code></pre><h2 data-id="heading-4" data-evernote-id="753" class="js-evernote-checked">
+</h2><div><img class="lazyload inited js-evernote-checked" data-src="https://user-gold-cdn.xitu.io/2017/9/9/57e000c7b7af9cc1e13883417fc7db40?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" data-width="800" data-height="600" src="https://user-gold-cdn.xitu.io/2017/9/9/57e000c7b7af9cc1e13883417fc7db40?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" data-evernote-lazy-src="https://user-gold-cdn.xitu.io/2017/9/9/57e000c7b7af9cc1e13883417fc7db40?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" data-evernote-id="163" width="552" height="252"></div><div><div><br></div></div><div><div><b data-evernote-id="373" class="js-evernote-checked">8：</b>此种方法因为可以取到 WrappedComponent 实例的render结果，所以还可以通过React.cloneElement等方法修改由 render 方法输出的 React 组件树。</div></div><div><div><br></div></div><h2 data-id="heading-5" data-evernote-id="754" class="js-evernote-checked">场景举例</h2><div><h3 data-id="heading-6" data-evernote-id="755" class="js-evernote-checked">场景1：页面复用</h3></div><div><div>描述：项目中有两个UI交互完全相同的页面，如下图。但由于服务于不同的业务，数据来源及部分文案有所不同。目前数据获取统一在lib/utils中进行封装，如 utils.getShopListA 和 utils.getShopListB。</div><div></div></div><p data-evernote-id="462" class="js-evernote-checked"><img class="lazyload inited js-evernote-checked" data-src="https://user-gold-cdn.xitu.io/2017/9/11/ccb33d85cb574e3dd77e8085093ed8a2?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" data-width="800" data-height="600" src="https://user-gold-cdn.xitu.io/2017/9/11/ccb33d85cb574e3dd77e8085093ed8a2?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" data-evernote-lazy-src="https://user-gold-cdn.xitu.io/2017/9/11/ccb33d85cb574e3dd77e8085093ed8a2?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" data-evernote-id="164" width="652" height="1148"><br></p><div><div>思路：将获取数据的函数作为参数传入，返回高阶组件。</div></div><div><div><br></div></div><div><div>components/ShopList.jsx</div></div><pre class="hljs bash js-evernote-checked" data-evernote-id="422"><code class="copyable js-evernote-checked" data-evernote-id="423">import React from <span class="hljs-string js-evernote-checked" data-evernote-id="593">'react'</span>;
+
+class ShopList extends React.Component {
+    <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="645">componentWillMount</span></span>() {
+    }
+
+    <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="646">render</span></span>() {
+        // 使用this.props.data渲染
+    }
+}
+
+<span class="hljs-built_in js-evernote-checked" data-evernote-id="689">export</span> default ShopList;<span class="copy-code-btn js-evernote-checked" data-evernote-id="733">复制代码</span></code></pre><div><div><br></div></div><div><div>common/shopListWithFetching.jsx</div></div><pre class="hljs bash js-evernote-checked" data-evernote-id="424"><code class="copyable js-evernote-checked" data-evernote-id="425">import ShopList from <span class="hljs-string js-evernote-checked" data-evernote-id="594">'../components/ShopList.jsx'</span>;
+
+<span class="hljs-keyword js-evernote-checked" data-evernote-id="544">function</span> shopListWithFetching(fetchData, defaultProps) {
+    <span class="hljs-built_in js-evernote-checked" data-evernote-id="690">return</span> class extends React.Component {
+        constructor(props) {
+            super(props);
+            this.state = {
+                data: [],
+            };
+        }
+        <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="647">componentWillMount</span></span>() {
+            fetchData().then((list) =&gt; {
+                this.setState({
+                    data: list,
+                });
+            }, (error) =&gt; {
+                console.log(error); // eslint-disable-line
+            });
+        }
+        <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="648">render</span></span>() {
+            <span class="hljs-built_in js-evernote-checked" data-evernote-id="691">return</span> &lt;ShopList data={this.state.data} {...defaultProps} {...this.props} /&gt;;
+        }
+    };
+}
+<span class="hljs-built_in js-evernote-checked" data-evernote-id="692">export</span> default shopListWithFetching;<span class="copy-code-btn js-evernote-checked" data-evernote-id="734">复制代码</span></code></pre><div><div><br></div></div><div><div>page/SholistA.jsx</div></div><pre class="hljs bash js-evernote-checked" data-evernote-id="426"><code class="copyable js-evernote-checked" data-evernote-id="427">import React from <span class="hljs-string js-evernote-checked" data-evernote-id="595">'react'</span>;
+import ReactDOM from <span class="hljs-string js-evernote-checked" data-evernote-id="596">'react-dom'</span>;
+
+import getShopListA from <span class="hljs-string js-evernote-checked" data-evernote-id="597">'../lib/utils'</span>;
+import shopListWithFetching from <span class="hljs-string js-evernote-checked" data-evernote-id="598">'../common/shopListWithFetching.jsx'</span>;
+
+const defaultProps = {
+    emptyMsg: <span class="hljs-string js-evernote-checked" data-evernote-id="599">'暂无门店数据'</span>,
+};
+const SholistA = shopListWithFetching(getShopListA, defaultProps);
+ReactDOM.render(&lt;SholistA /&gt;, document.getElementById(<span class="hljs-string js-evernote-checked" data-evernote-id="600">'app'</span>));<span class="copy-code-btn js-evernote-checked" data-evernote-id="735">复制代码</span></code></pre><div><div><br></div></div><div><div>page/SholistB.jsx</div></div><pre class="hljs bash js-evernote-checked" data-evernote-id="428"><code class="copyable js-evernote-checked" data-evernote-id="429">import React from <span class="hljs-string js-evernote-checked" data-evernote-id="601">'react'</span>;
+import ReactDOM from <span class="hljs-string js-evernote-checked" data-evernote-id="602">'react-dom'</span>;
+
+import getShopListB from <span class="hljs-string js-evernote-checked" data-evernote-id="603">'../lib/utils'</span>;
+import shopListWithFetching from <span class="hljs-string js-evernote-checked" data-evernote-id="604">'../components/ShopList.jsx'</span>;
+
+const defaultProps = {
+   emptyMsg: <span class="hljs-string js-evernote-checked" data-evernote-id="605">'暂无合作的门店'</span>,
+};
+const SholistB = shopListWithFetching(getShopListB, defaultProps);
+ReactDOM.render(&lt;SholistB /&gt;, document.getElementById(<span class="hljs-string js-evernote-checked" data-evernote-id="606">'app'</span>));<span class="copy-code-btn js-evernote-checked" data-evernote-id="736">复制代码</span></code></pre><div><div><br></div></div><div><h3 data-id="heading-7" data-evernote-id="756" class="js-evernote-checked">场景2：页面鉴权</h3></div><div><div>描述：最近有一个新业务要上线，包含有一系列相关页面。现在需要对其中几个页面增加白名单功能，如果不在白名单中的用户访问这些页面只进行文案提示，不展示业务数据。一周后去掉白名单，对全部用户开放。</div></div><div><div>以上场景中有几个条件：</div></div><ul data-evernote-id="481" class="js-evernote-checked"><li data-evernote-id="526" class="js-evernote-checked"><div>几个页面：鉴权代码不能重复写在页面组件中；</div></li><li data-evernote-id="527" class="js-evernote-checked"><div>只进行文案提示：鉴权过程在页面部分生命周期（业务数据请求）之前；</div></li><li data-evernote-id="528" class="js-evernote-checked"><div>一周后去掉白名单：鉴权应该完全与业务解耦，增加或去除鉴权应该最小化影响原有逻辑。</div></li></ul><div><div>思路：将鉴权流程封装，通过高阶组件像一件衣服穿在在业务组件外面。</div></div><div><div><br></div></div><div><div>假设原有页面（以page1和page2为例）代码如下：</div></div><div><div>pages/Page1.jsx</div></div><pre class="hljs bash js-evernote-checked" data-evernote-id="430"><code class="copyable js-evernote-checked" data-evernote-id="431">import React from <span class="hljs-string js-evernote-checked" data-evernote-id="607">'react'</span>;
+
+class Page1 extends React.Component {
+   <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="649">componentWillMount</span></span>() {
+       // 获取业务数据
+   }
+   <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="650">render</span></span>() {
+       // 页面渲染
+   }
+}
+<span class="hljs-built_in js-evernote-checked" data-evernote-id="693">export</span> default Page1<span class="copy-code-btn js-evernote-checked" data-evernote-id="737">复制代码</span></code></pre><div><div>pages/Page2.jsx</div></div><pre class="hljs bash js-evernote-checked" data-evernote-id="432"><code class="copyable js-evernote-checked" data-evernote-id="433">import React from <span class="hljs-string js-evernote-checked" data-evernote-id="608">'react'</span>;
+
+class Page2 extends React.Component {
+  <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="651">componentWillMount</span></span>() {
+      // 获取业务数据
+  }
+  <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="652">render</span></span>() {
+      // 页面渲染
+  }
+}
+<span class="hljs-built_in js-evernote-checked" data-evernote-id="694">export</span> default Page2
+
+<span class="copy-code-btn js-evernote-checked" data-evernote-id="738">复制代码</span></code></pre><div><div>思路：通过高阶组件将页面顶层组件封装，页面加载时请求后端鉴权接口，在render方法中增加渲染逻辑，鉴权失败展示文案，成功渲染原页面组件，请求业务数据。</div></div><div><div>高阶组件（components/AuthWrapper.jsx），鉴权方法名为whiteListAuth（lib/utils.js）。</div></div><pre class="hljs bash js-evernote-checked" data-evernote-id="434"><code class="copyable js-evernote-checked" data-evernote-id="435">import React from <span class="hljs-string js-evernote-checked" data-evernote-id="609">'react'</span>;
+import { whiteListAuth } from <span class="hljs-string js-evernote-checked" data-evernote-id="610">'../lib/utils'</span>;
+
+/**
+ * 白名单权限校验
+ * @param WrappedComponent
+ * @returns {AuthWrappedComponent}
+ * @constructor
+ */
+<span class="hljs-keyword js-evernote-checked" data-evernote-id="545">function</span> AuthWrapper(WrappedComponent) {
+    class AuthWrappedComponent extends React.Component {
+        constructor(props) {
+            super(props);
+            this.state = {
+                permissionDenied: -1,
+            };
+        }
+        <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="653">componentWillMount</span></span>() {
+            whiteListAuth().then(() =&gt; {
+                // success
+                this.setState({
+                    permissionDenied: 0,
+                });
+            }, (error) =&gt; {
+                this.setState({
+                    permissionDenied: 1,
+                });
+                console.log(error);
+            });
+        }
+        <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="654">render</span></span>() {
+            <span class="hljs-keyword js-evernote-checked" data-evernote-id="546">if</span> (this.state.permissionDenied === -1) {
+                <span class="hljs-built_in js-evernote-checked" data-evernote-id="695">return</span> null;
+            }
+            <span class="hljs-keyword js-evernote-checked" data-evernote-id="547">if</span> (this.state.permissionDenied) {
+                <span class="hljs-built_in js-evernote-checked" data-evernote-id="696">return</span> &lt;div&gt;功能即将上线，敬请期待~&lt;/div&gt;;
+            }
+            <span class="hljs-built_in js-evernote-checked" data-evernote-id="697">return</span> &lt;WrappedComponent {...this.props} /&gt;;
+        }
+    }
+
+    <span class="hljs-built_in js-evernote-checked" data-evernote-id="698">return</span> AuthWrappedComponent;
+}
+
+<span class="hljs-built_in js-evernote-checked" data-evernote-id="699">export</span> default AuthWrapper;<span class="copy-code-btn js-evernote-checked" data-evernote-id="739">复制代码</span></code></pre><div><div><br></div></div><div><div>增加鉴权后的页面</div></div><div><div>pages/Page1.jsx</div></div><pre class="hljs bash js-evernote-checked" data-evernote-id="436"><code class="copyable js-evernote-checked" data-evernote-id="437">import React from <span class="hljs-string js-evernote-checked" data-evernote-id="611">'react'</span>;
+import AuthWrapper from <span class="hljs-string js-evernote-checked" data-evernote-id="612">'../components/AuthWrapper'</span>;
+
+class Page1 extends React.Component {
+  <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="655">componentWillMount</span></span>() {
+      // 获取业务数据
+  }
+  <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="656">render</span></span>() {
+      // 页面渲染
+  }
+}
+// <span class="hljs-built_in js-evernote-checked" data-evernote-id="700">export</span> default Page1
+<span class="hljs-built_in js-evernote-checked" data-evernote-id="701">export</span> default AuthWrapper(Page1);<span class="copy-code-btn js-evernote-checked" data-evernote-id="740">复制代码</span></code></pre><div><div>pages/Page2.jsx</div></div><pre class="hljs bash js-evernote-checked" data-evernote-id="438"><code class="copyable js-evernote-checked" data-evernote-id="439">import React from <span class="hljs-string js-evernote-checked" data-evernote-id="613">'react'</span>;
+import AuthWrapper from <span class="hljs-string js-evernote-checked" data-evernote-id="614">'../components/AuthWrapper'</span>;
+
+class Page2 extends React.Component {
+ <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="657">componentWillMount</span></span>() {
+     // 获取业务数据
+ }
+ <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="658">render</span></span>() {
+     // 页面渲染
+ }
+}
+// <span class="hljs-built_in js-evernote-checked" data-evernote-id="702">export</span> default Page2
+<span class="hljs-built_in js-evernote-checked" data-evernote-id="703">export</span> default AuthWrapper(Page2);
+
+<span class="copy-code-btn js-evernote-checked" data-evernote-id="741">复制代码</span></code></pre><div><div>这样鉴权与业务完全解耦，也避免鉴权失败情况下多余的数据请求，只需要增加/删除一行代码，改动一行代码，即可增加/去除白名单的控制。</div></div><div><div><br></div></div><div><h3 data-id="heading-8" data-evernote-id="757" class="js-evernote-checked">场景3：日志及性能打点</h3></div><div><div>描述：所有使用React的前端项目页面需要增加PV，UV，性能打点。每个项目的不同页面顶层组件生命周期中分别增加打点代码无疑会产生大量重复代码。</div></div><div><div><br></div><p data-evernote-id="463" class="js-evernote-checked">思路：通过extends方法返回高阶组件，劫持原页面组件的生命周期。具体可期待其他小伙伴后续的文章。</p></div><div><div><br></div></div><h2 data-id="heading-9" data-evernote-id="758" class="js-evernote-checked">高阶组件常见问题</h2><div><div><b data-evernote-id="374" class="js-evernote-checked">Ref</b></div></div><div><div>如上面的第一、二种高阶组件方法中所示，常规的通过this是无法获取你想要的ref，但可以通过ref的回调函数获取。</div></div><div><div><br></div></div><div><div><b data-evernote-id="375" class="js-evernote-checked">Static方法丢失</b></div></div><div><div>如上面的第一、二种高阶组件方法中所示，高阶组件对子组件包装之后会返回一个容器组件，这意味着新组件不包含任何子组件中包含的静态方法。为了解决这个问题，应该将静态方法拷贝到容器组件之后，再将其返回。可以使用 <a href="https://github.com/mridgway/hoist-non-react-statics" target="_blank" rel="nofollow noopener noreferrer" data-evernote-id="18" class="js-evernote-checked">hoist-non-react-statics</a> 来自动的拷贝所有非React的静态方法。当然另一个解决方案是将组件自身和静态方法分别导出。</div></div><div><div><br></div></div><div><div><b data-evernote-id="376" class="js-evernote-checked">componentWillReceiveProps</b></div></div><div><div>如上面的第一、二种高阶组件方法中所示，props层层传递，值变化时必然会引起一些维护上的困难。</div></div><h2 data-id="heading-10" data-evernote-id="759" class="js-evernote-checked">
+</h2><h2 data-id="heading-11" data-evernote-id="760" class="js-evernote-checked">常用高阶组件库</h2><div><div><a href="https://github.com/reactjs/react-redux" target="_blank" rel="nofollow noopener noreferrer" data-evernote-id="19" class="js-evernote-checked"><b data-evernote-id="377" class="js-evernote-checked">React-Redux</b></a> - connect</div></div><div><div>使用过React-Redux的同学都知道，组件中访问全局state数据，我们需要调用connect函数，如<a href="http://redux.js.org/docs/basics/UsageWithReact.html" target="_blank" rel="nofollow noopener noreferrer" data-evernote-id="20" class="js-evernote-checked">官方示例</a>中：</div></div><pre class="hljs bash js-evernote-checked" data-evernote-id="440"><code class="copyable js-evernote-checked" data-evernote-id="441">const VisibleTodoList = connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(TodoList)<span class="copy-code-btn js-evernote-checked" data-evernote-id="742">复制代码</span></code></pre><div><div>其中 TodoList 是一个React组件。以下是<a href="https://github.com/reactjs/react-redux/blob/master/src/connect/connect.js" target="_blank" rel="nofollow noopener noreferrer" data-evernote-id="21" class="js-evernote-checked">connect函数源代码</a>：</div></div><pre class="hljs bash js-evernote-checked" data-evernote-id="442"><code class="copyable js-evernote-checked" data-evernote-id="443"><span class="hljs-built_in js-evernote-checked" data-evernote-id="704">return</span> <span class="hljs-keyword js-evernote-checked" data-evernote-id="548">function</span> connect(
+  mapStateToProps,
+  mapDispatchToProps,
+  mergeProps,
+  {
+    pure = <span class="hljs-literal js-evernote-checked" data-evernote-id="557">true</span>,
+    areStatesEqual = strictEqual,
+    areOwnPropsEqual = shallowEqual,
+    areStatePropsEqual = shallowEqual,
+    areMergedPropsEqual = shallowEqual,
+    ...extraOptions
+  } = {}
+) {
+    <span class="hljs-built_in js-evernote-checked" data-evernote-id="705">return</span> connectHOC(selectorFactory, {...})
+}<span class="copy-code-btn js-evernote-checked" data-evernote-id="743">复制代码</span></code></pre><div><div>上面的connectHOC的默认值就是下面的 connectAdvanced</div></div><pre class="hljs bash js-evernote-checked" data-evernote-id="444"><code class="copyable js-evernote-checked" data-evernote-id="445"><span class="hljs-built_in js-evernote-checked" data-evernote-id="706">export</span> default <span class="hljs-keyword js-evernote-checked" data-evernote-id="549">function</span> <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="659">connectAdvanced</span></span>() {
+    <span class="hljs-built_in js-evernote-checked" data-evernote-id="707">return</span> <span class="hljs-keyword js-evernote-checked" data-evernote-id="550">function</span> wrapWithConnect(WrappedComponent) {
+        class Connect extends Component {
+            <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="660">render</span></span>() {
+                // 返回           
+                <span class="hljs-built_in js-evernote-checked" data-evernote-id="708">return</span> createElement(WrappedComponent, this.addExtraProps(selector.props))
+            }
+        }
+    }
+    // Similar to Object.assign
+    <span class="hljs-built_in js-evernote-checked" data-evernote-id="709">return</span> hoistStatics(Connect, WrappedComponent)
+}<span class="copy-code-btn js-evernote-checked" data-evernote-id="744">复制代码</span></code></pre><div><div>可以看出，connect函数传入mapStateToProps等参数，执行结果是返回另一个函数。给这个函数传入原始组件（WrappedComponent），会返回另一个新的组件（Connect），props也传入了这个组件。</div></div><div><div><br></div></div><div><div><a href="https://github.com/acdlite/recompose" target="_blank" rel="nofollow noopener noreferrer" data-evernote-id="22" class="js-evernote-checked"><b data-evernote-id="378" class="js-evernote-checked">recompose</b></a></div></div><blockquote data-evernote-id="472" class="js-evernote-checked"><div>Recompose is a React utility belt for function components and higher-order components.</div></blockquote><div><div>以 withHandlers 为例：</div></div><pre class="hljs bash js-evernote-checked" data-evernote-id="446"><code class="copyable js-evernote-checked" data-evernote-id="447">/* eslint-disable no-console */
+import { Component } from <span class="hljs-string js-evernote-checked" data-evernote-id="615">'react'</span>
+import createEagerFactory from <span class="hljs-string js-evernote-checked" data-evernote-id="616">'./createEagerFactory'</span>
+import <span class="hljs-built_in js-evernote-checked" data-evernote-id="710">set</span>DisplayName from <span class="hljs-string js-evernote-checked" data-evernote-id="617">'./setDisplayName'</span>
+import wrapDisplayName from <span class="hljs-string js-evernote-checked" data-evernote-id="618">'./wrapDisplayName'</span>
+import mapValues from <span class="hljs-string js-evernote-checked" data-evernote-id="619">'./utils/mapValues'</span>
+
+const withHandlers = handlers =&gt; BaseComponent =&gt; {
+  const factory = createEagerFactory(BaseComponent)
+  class WithHandlers extends Component {
+    cachedHandlers = {}
+
+    handlers = mapValues(
+      typeof handlers === <span class="hljs-string js-evernote-checked" data-evernote-id="620">'function'</span> ? handlers(this.props) : handlers,
+      (createHandler, handlerName) =&gt; (...args) =&gt; {
+        const cachedHandler = this.cachedHandlers[handlerName]
+        <span class="hljs-keyword js-evernote-checked" data-evernote-id="551">if</span> (cachedHandler) {
+          <span class="hljs-built_in js-evernote-checked" data-evernote-id="711">return</span> cachedHandler(...args)
+        }
+
+        const handler = createHandler(this.props)
+        this.cachedHandlers[handlerName] = handler
+
+        <span class="hljs-keyword js-evernote-checked" data-evernote-id="552">if</span> (
+          process.env.NODE_ENV !== <span class="hljs-string js-evernote-checked" data-evernote-id="621">'production'</span> &amp;&amp;
+          typeof handler !== <span class="hljs-string js-evernote-checked" data-evernote-id="622">'function'</span>
+        ) {
+          console.error(
+            // eslint-disable-line no-console
+            <span class="hljs-string js-evernote-checked" data-evernote-id="623">'withHandlers(): Expected a map of higher-order functions. '</span> +
+              <span class="hljs-string js-evernote-checked" data-evernote-id="624">'Refer to the docs for more info.'</span>
+          )
+        }
+
+        <span class="hljs-built_in js-evernote-checked" data-evernote-id="712">return</span> handler(...args)
+      }
+    )
+
+    <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="661">componentWillReceiveProps</span></span>() {
+      this.cachedHandlers = {}
+    }
+
+    <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="662">render</span></span>() {
+      <span class="hljs-built_in js-evernote-checked" data-evernote-id="713">return</span> factory({
+        ...this.props,
+        ...this.handlers,
+      })
+    }
+  }
+  <span class="hljs-built_in js-evernote-checked" data-evernote-id="714">return</span> WithHandlers
+}
+
+<span class="hljs-built_in js-evernote-checked" data-evernote-id="715">export</span> default withHandlers<span class="copy-code-btn js-evernote-checked" data-evernote-id="745">复制代码</span></code></pre><div><div><br></div></div><div><div><a href="https://github.com/facebook/relay" target="_blank" rel="nofollow noopener noreferrer" data-evernote-id="23" class="js-evernote-checked"><b data-evernote-id="379" class="js-evernote-checked">Relay</b></a><b data-evernote-id="380" class="js-evernote-checked"> </b>- RelayContainer</div></div><pre class="hljs bash js-evernote-checked" data-evernote-id="448"><code class="copyable js-evernote-checked" data-evernote-id="449"><span class="hljs-keyword js-evernote-checked" data-evernote-id="553">function</span> createContainerComponent(
+  Component: React.ComponentType&lt;any&gt;,
+  spec: RelayContainerSpec,
+): RelayContainerClass {
+    const ComponentClass = getReactComponent(Component);
+    class RelayContainer extends React.Component&lt;<span class="hljs-variable js-evernote-checked" data-evernote-id="558">$FlowFixMeProps</span>,
+    {
+      queryData: {[propName: string]: mixed},
+      rawVariables: Variables,
+      relayProp: RelayProp,
+      },
+    &gt; {
+        render(): React.Node {
+            <span class="hljs-keyword js-evernote-checked" data-evernote-id="554">if</span> (ComponentClass) {
+                <span class="hljs-built_in js-evernote-checked" data-evernote-id="716">return</span> (
+                  &lt;ComponentClass
+                  {...this.props}
+                  {...this.state.queryData}
+                  ref={<span class="hljs-string js-evernote-checked" data-evernote-id="625">'component'</span>} // eslint-disable-line react/no-string-refs
+                  relay={this.state.relayProp}
+                 /&gt;
+               );
+            } <span class="hljs-keyword js-evernote-checked" data-evernote-id="555">else</span> {
+                // Stateless functional.
+                const Fn = (Component: any);
+                <span class="hljs-built_in js-evernote-checked" data-evernote-id="717">return</span> React.createElement(Fn, {
+                  ...this.props,
+                  ...this.state.queryData,
+                  relay: this.state.relayProp,
+                });
+            }
+        }
+    }
+    <span class="hljs-built_in js-evernote-checked" data-evernote-id="718">return</span> RelayContainer;
+}<span class="copy-code-btn js-evernote-checked" data-evernote-id="746">复制代码</span></code></pre><div><div><br></div></div><h2 data-id="heading-12" data-evernote-id="761" class="js-evernote-checked">Function as Child Components</h2><div><div>在React社区中，还有另一种类似高阶组件的方式叫做 <i>Function as Child Components</i>。它的思路是将函数（执行结果是返回新的组件）作为子组件传入，在父组件的render方法中执行此函数，可以传入特定的参数作为子组件的props。</div></div><div><div>以上面的Student组件为例：</div></div><pre class="hljs bash js-evernote-checked" data-evernote-id="450"><code class="copyable js-evernote-checked" data-evernote-id="451">class StudentWithAge extends React.Component {
+    <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="663">componentWillMount</span></span>() {
+        this.setState({
+            name: <span class="hljs-string js-evernote-checked" data-evernote-id="626">'小红'</span>,
+            age: 25,
+        });
+    }
+    <span class="hljs-function"><span class="hljs-title js-evernote-checked" data-evernote-id="664">render</span></span>() {
+        <span class="hljs-built_in js-evernote-checked" data-evernote-id="719">return</span> (
+            &lt;div&gt;
+                {this.props.children(this.state.name, this.state.age)}
+            &lt;/div&gt;
+        );
+    }
+}<span class="copy-code-btn js-evernote-checked" data-evernote-id="747">复制代码</span></code></pre><div><div><br></div></div><div><div>使用的时候可以这样：</div></div><pre class="hljs bash js-evernote-checked" data-evernote-id="452"><code class="copyable js-evernote-checked" data-evernote-id="453">&lt;StudentWithAge&gt;
+    {
+        (name, age) =&gt; {
+            <span class="hljs-built_in js-evernote-checked" data-evernote-id="720">let</span> studentName = name;
+            <span class="hljs-keyword js-evernote-checked" data-evernote-id="556">if</span> (age &gt; 22) {
+                studentName = `大学毕业的<span class="hljs-variable js-evernote-checked" data-evernote-id="559">${studentName}</span>`;
+            }
+            <span class="hljs-built_in js-evernote-checked" data-evernote-id="721">return</span> &lt;Student name={studentName} /&gt;;
+        }
+    }
+&lt;/StudentWithAge&gt;<span class="copy-code-btn js-evernote-checked" data-evernote-id="748">复制代码</span></code></pre><div><div><br></div></div><div><div>比起高阶组件，这种方式有一些优势：</div></div><div><div><br></div><p data-evernote-id="464" class="js-evernote-checked">1、代码结构上少掉了一层（返回高阶组件的）函数封装。</p><p data-evernote-id="465" class="js-evernote-checked">2、调试时组件结构更加清晰；</p></div><div><p data-evernote-id="466" class="js-evernote-checked">3、从组件复用角度来看，父组件和子组件之间通过children连接，两个组件其实又完全可以单独使用，内部耦合较小。当然单独使用意义并不大，而且高阶组件也可以通过组合两个组件来做到。</p></div><div><div><br></div></div><div><div>同时也有一些劣势：</div></div><div><div>1、（返回子组件）函数占用了父组件原本的props.children；</div><p data-evernote-id="467" class="js-evernote-checked">2、（返回子组件）函数只能进行调用，无法劫持劫持原组件生命周期方法或取到static方法；</p></div><div><div>3、（返回子组件）函数作为子组件包裹在父组件中的方式看起来虽灵活但不够优雅；</div><p data-evernote-id="468" class="js-evernote-checked">4、由于子组件的渲染控制完全通过在父组件render方法中调用（返回子组件）函数，无法通过shouldComponentUpdate来做性能优化。</p></div><div><div><br></div></div><div><div>所以这两种方式各有优劣，可根据具体场景选择。</div></div><div><div><br></div></div><h2 data-id="heading-13" data-evernote-id="762" class="js-evernote-checked">关于Mixins</h2><div><div>在使用ES6语法写组件之前，组件复用我们通常使用mixin方式，而使用ES6语法之后mixin不再支持，所以现在组内的项目中也不再使用。而mixin作为一种抽象和共用代码的方案，许多库（比如react-router）都依赖这一功能。</div></div><blockquote data-evernote-id="473" class="js-evernote-checked"><div>90% of the time you don't need mixins, in general prefer composition via high order components. For the 10% of the cases where mixins are best (e.g. PureRenderMixin and react-router's Lifecycle mixin), this library can be very useful.</div></blockquote><div><div>在React官方文章 <a href="https://facebook.github.io/react/blog/2016/07/13/mixins-considered-harmful.html#mixins-cause-name-clashes" target="_blank" rel="nofollow noopener noreferrer" data-evernote-id="24" class="js-evernote-checked">Mixins Considered Harmful</a> 中阐述了一些Mixins存在的问题：</div></div><ol data-evernote-id="482" class="js-evernote-checked"><li data-evernote-id="529" class="js-evernote-checked"><div>Mixins introduce implicit dependencies</div></li><li data-evernote-id="530" class="js-evernote-checked"><div>Mixins cause name clashes</div></li><li data-evernote-id="531" class="js-evernote-checked"><div>Mixins cause snowballing complexity</div></li></ol><div><h3 data-id="heading-14" data-evernote-id="763" class="js-evernote-checked"><br></h3><h3 data-id="heading-15" data-evernote-id="764" class="js-evernote-checked">两者生命周期上的差异</h3></div><div><p data-evernote-id="469" class="js-evernote-checked">HOC的生命周期依赖于其实现，而mixin中除了render之外其他的生命周期方法都可以重复且会调用，但不可以设置相同的属性或者包含相同名称的普通方法。重复的生命周期调用方法的顺序是：mixin方法首先会被调用（根据mixins中的顺序从左到右的进行调用），然后再是组件的中方法被调用。</p></div><h2 data-id="heading-16" data-evernote-id="765" class="js-evernote-checked">
+</h2><h2 data-id="heading-17" data-evernote-id="766" class="js-evernote-checked">相关链接</h2><div><div><a href="https://facebook.github.io/react/docs/higher-order-components.html" target="_blank" rel="nofollow noopener noreferrer" data-evernote-id="25" class="js-evernote-checked">Higher-Order Components - React</a></div></div><div><div><a href="https://medium.com/@franleplant/react-higher-order-components-in-depth-cf9032ee6c3e" target="_blank" rel="nofollow noopener noreferrer" data-evernote-id="26" class="js-evernote-checked">medium.com/@franleplan…</a></div></div><div><div><a href="http://rea.tech/functions-as-child-components-and-higher-order-components/" target="_blank" rel="nofollow noopener noreferrer" data-evernote-id="27" class="js-evernote-checked">Functions as Child Components and Higher Order Components</a></div></div><div><div><a href="https://medium.com/merrickchristensen/function-as-child-components-5f3920a9ace9" target="_blank" rel="nofollow noopener noreferrer" data-evernote-id="28" class="js-evernote-checked">medium.com/merrickchri…</a></div></div><p data-evernote-id="470" class="js-evernote-checked"><br></p></div>
