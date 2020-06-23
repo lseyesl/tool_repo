@@ -2,17 +2,16 @@
 
 import React, { Component } from 'react';
 import { render } from 'react-dom';
-import { AgGridReact } from '@ag-grid-community/react';
-import { AllModules } from '@ag-grid-enterprise/all-modules';
-import '@ag-grid-community/all-modules/dist/styles/ag-grid.css';
-import '@ag-grid-community/all-modules/dist/styles/ag-theme-alpine.css';
+import { AgGridReact } from 'ag-grid-react';
+import 'ag-grid-enterprise';
+import 'ag-grid-community/dist/styles/ag-grid.css';
+import 'ag-grid-community/dist/styles/ag-theme-alpine.css';
 
 class GridExample extends Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      modules: AllModules,
       columnDefs: [
         {
           headerName: 'Athlete Fields',
@@ -219,7 +218,6 @@ class GridExample extends Component {
               className="ag-theme-alpine"
             >
               <AgGridReact
-                modules={this.state.modules}
                 columnDefs={this.state.columnDefs}
                 defaultColDef={this.state.defaultColDef}
                 autoGroupColumnDef={this.state.autoGroupColumnDef}
